@@ -257,6 +257,67 @@
             vertical-align:middle;
         }
 
+        .org-chart-node {
+            display: inline-flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: flex-start;
+            gap: 2px;
+            font-size: 11px;
+            line-height: 1.1;
+            white-space: normal;
+            min-width: 120px;
+            max-width: 190px;
+            padding: 0;
+            margin: 0;
+        }
+
+        .org-chart-node-row {
+            flex-direction: row;
+            align-items: center;
+            justify-content: flex-start;
+            gap: 4px;
+        }
+
+        .org-chart-icon img {
+            display: block;
+        }
+
+        .org-chart-text {
+            font-weight: 500;
+            text-align: center;
+            word-break: normal;
+            overflow-wrap: break-word;
+            max-width: 220px;
+            margin: 0;
+        }
+
+        .org-chart-project-list {
+            margin-top: 0;
+            width: 100%;
+            display: flex;
+            flex-direction: column;
+            gap: 2px;
+            align-items: flex-start;
+            justify-content: flex-start;
+        }
+
+        .org-chart-project-item {
+            display: inline-flex;
+            align-items: center;
+            gap: 4px;
+            font-size: 10px;
+            line-height: 1.1;
+            white-space: normal;
+            word-break: normal;
+            overflow-wrap: break-word;
+            margin: 0;
+        }
+
+        .org-chart-project-item img {
+            display: block;
+        }
+
 
         .chart-container {
         position: relative;
@@ -559,9 +620,6 @@
             <img src="{{ url_for('static', filename='loading.gif') }}" alt="Loading...">
         </div>
         <div id="report" style="visibility: hidden;">
-            <div id="chart-data" style="display: none;">
-                {{ resource_hierarchy_chart_data|safe }}
-            </div>
             <div id="chart-wrapper">
                 <div class="chart-controls">
                     <label id="resource-hierarchy-chart-zoom-label" for="resource-hierarchy-chart-zoom" style="vertical-align: top;visibility: hidden;">Chart zoom </label>
@@ -602,8 +660,7 @@
             data.addColumn('string', 'Manager');
             data.addColumn('string', 'ToolTip');
 
-            const chartDataElement = document.getElementById('chart-data');
-            const chartDataRaw = chartDataElement ? chartDataElement.textContent.trim() : "";
+            const chartDataRaw = {{ resource_hierarchy_chart_data|tojson|safe }};
             let chartRows = [];
             if (chartDataRaw) {
                 try {

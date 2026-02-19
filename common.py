@@ -2,13 +2,13 @@
 
 resource_type_icons = {
     "project": '<img src="/static/img/project.png" width="25" height="25" style="display:inline-block;vertical-align:middle">',
-    "folder": '<img src="/static/img/folderblue.png" width="25" height="25" style="display:inline-block;vertical-align:middle">',
+    "folder": '<img src="/static/img/folder.png" width="25" height="25" style="display:inline-block;vertical-align:middle">',
     "organization": '<img src="/static/img/org.png" width="30" height="30" style="display:inline-block;vertical-align:middle">'
 }
 
 resource_type_icons_small = {
     "project": '<img src="/static/img/project.png" width="15" height="15" style="display:inline-block;vertical-align:middle">',
-    "folder": '<img src="/static/img/folderblue.png" width="15" height="15" style="display:inline-block;vertical-align:middle">',
+    "folder": '<img src="/static/img/folder.png" width="15" height="15" style="display:inline-block;vertical-align:middle">',
     "organization": '<img src="/static/img/org.png" width="20" height="20" style="display:inline-block;vertical-align:middle">'
 }
 
