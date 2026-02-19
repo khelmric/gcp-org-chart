@@ -1,0 +1,160 @@
+body {
+    font-family: Arial, sans-serif;
+    font-size: small;
+    margin: 0;
+    padding: 0;
+    display: flex;
+    flex-direction: column;
+    height: 100vh;
+}
+header {
+    background-color: #0179e3;
+    color: white;
+    padding: 10px 20px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+header button {
+    background-color: #666666;
+    color: white;
+    border: none;
+    padding: 5px 10px;
+    cursor: pointer;
+    border-radius: 5px;
+}
+header button:hover {
+    background-color: #323232;
+}
+main {
+    position: relative;
+    display: flex;
+    flex-grow: 1;
+    overflow: hidden;
+    transition: all 0.4s ease;
+}
+aside {
+    width: 25%;
+    padding: 10px;
+    border-right: 1px solid #ccc;
+    overflow-y: auto;
+    transition: transform 0.4s ease, opacity 0.4s ease;
+}
+aside.hidden {
+    transform: translateX(-100%); /* Move it off-screen to the left */
+    opacity: 0; /* Fade out */
+    pointer-events: none; /* Disable interactions while hidden */
+    display: none;
+}
+#toggleAside {
+    position: absolute;
+    top: 10px;
+    left: 10px; /* Adjust based on your layout */
+    z-index: 1000;
+    background-color: #666666;
+    color: white;
+    border: none;
+    padding: 5px 10px;
+    cursor: pointer;
+    border-radius: 5px;
+    transition: background-color 0.3s ease;
+}
+
+#toggleServices {
+    position: absolute;
+    top: 10px;
+    right: 10px; /* Adjust based on your layout */
+    z-index: 1000;
+    background-color: #666666;
+    color: white;
+    border: none;
+    padding: 5px 10px;
+    cursor: pointer;
+    border-radius: 5px;
+    transition: background-color 0.3s ease;
+}
+
+#toggleAside:hover {
+    background-color: #323232;
+}
+aside h3 {
+    border-bottom: 1px solid #ccc;
+    padding: 2px 2px 2px 6px;
+    background-color: #e7e7e7;
+}
+
+section {
+    margin-bottom: 20px;
+}
+.tenant-section {
+    margin-top: 20px;
+}
+.section-input {
+    display: block;
+    margin-bottom: 10px;
+    width: calc(100% - 20px);
+    padding: 5px;
+}
+.section-content {
+    display: none;
+    margin-top: 10px;
+}
+.section-content.visible {
+    display: block;
+}
+.sub-section {
+    margin-left: 20px;
+}
+.sub-section-content {
+    display: block;
+    margin-top: 10px;
+}
+.toggle-btn {
+    margin-top: 5px;
+    margin-bottom: 5px;
+    cursor: pointer;
+    background: #eee;
+    border: none;
+    padding: 5px 10px;
+    font-weight: bold;
+}
+
+.collapsible-content {
+    margin-top: 10px;
+    padding-left: 15px;
+    border-left: 2px solid #ccc;
+}
+.false {
+    display: none;
+}
+.topLevelFolder {
+    margin-top: 4px;
+}
+#chart {
+    position: relative;
+    flex-grow: 1;
+    margin-top: 25px;
+    padding: 10px;
+    overflow: auto;
+    transition: width 0.4s ease;
+    width: calc(100% - 25%);
+}
+main.fullscreen-chart #chart {
+    width: 100%;
+    padding: 15px; 
+    margin-left: 0;
+}
+main.fullscreen-chart {
+    justify-content: center; /* Center the chart horizontally when aside is hidden */
+}
+.blinking-image {
+    animation: blink 1s infinite; /* 1-second cycle, repeats infinitely */
+    width: 15px;
+    height: 15px;
+    display:inline-block;
+    vertical-align:middle;
+}
+@keyframes blink {
+    0%, 50% { opacity: 1; } /* Visible */
+    50.01%, 100% { opacity: 0; } /* Hidden */
+}
