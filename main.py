@@ -12,7 +12,7 @@ account, project = get_authenticated_account()
 @app.route("/", methods=["GET", "POST"])
 def index():
     resource_id = ""
-    resources = {}
+    resources = []
     resource_type = ""
     resource_display_name = ""
     resource_hierarchy_chart_data = ""
@@ -32,13 +32,13 @@ def index():
             resource_id = request.args.get("resourceId", "")
             if resource_id:
                 resource_type, resource_display_name, resources, exception_error_msg = get_resources(resource_id)
-                # print(resource_type)
-                resource_hierarchy_chart_data, resource_hierarchy_html = asset_data2html(resources, resource_id, resource_display_name, resource_type)
+                if resources:
+                    resource_hierarchy_chart_data, resource_hierarchy_html = asset_data2html(resources, resource_id, resource_display_name, resource_type)
         except Exception as e:
             print(e)
             
     if resource_type == "invalid":
-        error_msg = f"{error_msg} <br>ERROR - Invalid resource ID, quota issue or missing permissions. ({exception_error_msg})" 
+        error_msg = f"{error_msg} <br>ERROR - Wrong resource ID, quota issue or missing permissions. ({exception_error_msg})" 
         
     # Render template
     return render_template("index.html",

@@ -57,9 +57,13 @@ def asset_data2html(resources_list, resource_id, resource_display_name, resource
                     add_project(parent, name, display_name)
                 else:
                     icon_html = resource_type_icons.get(res_type, "")
+                    type_label = ""
+                    if res_type == "organization":
+                        type_label = "<div class=\"org-chart-type\"><strong>Organization</strong></div>"
                     node_html = (
-                        f"<div class=\"org-chart-node\" data-node-id=\"{name}\">"
+                        f"<div class=\"org-chart-node\" data-node-id=\"{name}\" data-node-type=\"{res_type}\">"
                         f"<div class=\"org-chart-icon\">{icon_html}</div>"
+                        f"{type_label}"
                         f"<div class=\"org-chart-text\">{display_name}</div>"
                         "</div>"
                     )
@@ -103,7 +107,7 @@ def asset_data2html(resources_list, resource_id, resource_display_name, resource
                 if not project_id:
                     continue
                 node_html = (
-                    f"<div class=\"org-chart-node org-chart-node-row\" data-node-id=\"{project_id}\">"
+                    f"<div class=\"org-chart-node org-chart-node-row\" data-node-id=\"{project_id}\" data-node-type=\"project\">"
                     f"<div class=\"org-chart-icon\">{project_icon}</div>"
                     f"<div class=\"org-chart-text\">{project_name}</div>"
                     "</div>"

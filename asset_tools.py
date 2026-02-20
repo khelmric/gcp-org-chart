@@ -59,14 +59,11 @@ def get_resources(resource_id: str):
             ):
                 last_folder_or_project = r
                 
-            ## TESTING SA_KEYS
-                
             if r.get("asset_type") in (
                 "cloudresourcemanager.googleapis.com/Project",
             ):
                 project_ids.append(r.get("name", "").split("/")[-1])
                 
-            ## /TESTING SA_KEYS
 
             # Check display_name match right away
             if r.get("name", "").split("/")[-1] == resource_id:

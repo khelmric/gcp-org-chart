@@ -120,6 +120,14 @@ section {
 	flex-wrap: wrap;
 }
 
+.divider {
+	width: 1px;
+	height: 28px;
+	background: var(--border);
+	margin: 0 6px;
+	align-self: center;
+}
+
 .section-input,
 .search-input {
 	display: inline-block;
@@ -171,6 +179,18 @@ button:disabled {
 	cursor: not-allowed;
 	box-shadow: none;
 	transform: none;
+}
+
+#delete-node {
+	background: #ef4444;
+}
+
+#delete-node:hover:not(:disabled) {
+	background: #dc2626;
+}
+
+#delete-node:disabled {
+	background: #f5d5cb;
 }
 
 #resource-hierarchy-chart-scale {
@@ -225,10 +245,45 @@ button:disabled {
 	margin: 0;
 }
 
+.org-chart-type {
+	font-size: 11px;
+	color: #475569;
+	line-height: 1.1;
+	text-align: center;
+	margin-top: 2px;
+}
+
 .org-chart-count {
 	font-weight: 500;
 	margin-left: 4px;
 	color: #666666;
+}
+
+.org-chart-collapsed {
+	display: inline-flex;
+	align-items: center;
+	gap: 0;
+	margin-left: 6px;
+}
+
+.org-chart-mult {
+	font-weight: 600;
+	color: #475569;
+	margin-left: 0;
+}
+
+.org-chart-summary {
+	display: inline-flex;
+	flex-wrap: wrap;
+	justify-content: center;
+	gap: 6px;
+	margin-top: 2px;
+	color: #475569;
+}
+
+.org-chart-collapsed img {
+	width: 14px;
+	height: 14px;
 }
 
 .org-chart-highlight {

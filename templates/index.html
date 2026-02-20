@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <link rel="icon" type="image/x-icon" href="/static/favicon.png">
-    <title>Google Cloud Health Check</title>
+    <title>GCP Org Chart Viewer</title>
     <script type="text/javascript" src="https://www.gstatic.com/charts/loader.js"></script>
     <link rel="stylesheet" href="/static/style.css">
 </head>
@@ -12,7 +12,7 @@
     <header>
         <div class="left">
             <img src="/static/favicon.png" width="40" height="40">
-            <h2>Google Cloud Resource Hierarchy</h2>
+            <h2>GCP Org Chart Viewer</h2>
         </div>
 
         <div id="controls">
@@ -32,15 +32,17 @@
                     <label for="resourceId"><b>Resource ID:</b></label>
                     <input type="text" class="section-input" id="resourceId" name="resourceId" autofocus value="{{ resource_id }}"  style="width: 17em">
                     <button type="submit" id="load-resources" style="display: none;" aria-hidden="true">Load</button>
+                    <span class="divider" aria-hidden="true"></span>
                     <label for="search-input"><b>Search:</b></label>
                     <input type="text" id="search-input" class="search-input" disabled>
-                    <button id="focus-node" type="button" style="margin-left: 8px;" disabled>Focus item</button>
-                    <button id="delete-node" type="button" style="margin-left: 8px;" disabled>Delete item</button>
-                    <button id="restore-chart" type="button" style="margin-left: 6px;" disabled>Restore chart</button>
+                    <button id="focus-node" type="button" style="margin-left: 8px;" disabled>Focus</button>
+                    <button id="toggle-visibility" type="button" style="margin-left: 8px;" disabled>Hide</button>
+                    <button id="delete-node" type="button" style="margin-left: 8px;" disabled>Delete</button>
+                    <button id="restore-chart" type="button" style="margin-left: 6px;" disabled>Restore</button>
                     <button id="save-chart" type="button" style="margin-left: 6px;" disabled>Save</button>
                 </section>
                 <section>
-                    <span id="error_msg" style="color: red;vertical-align: top;visibility: hidden;">{{error_msg|safe}}</span>
+                    <span id="error_msg" style="color: red;vertical-align: top;visibility: {{ 'visible' if error_msg else 'hidden' }};">{{error_msg|safe}}</span>
                 </section>
             </form>
         </div>
@@ -83,6 +85,7 @@
             const saveButton = document.getElementById("save-chart");
             const searchInput = document.getElementById("search-input");
             const focusButton = document.getElementById("focus-node");
+            const toggleButton = document.getElementById("toggle-visibility");
             const resourceIdValue = "{{ resource_id }}";
 
             const chartDataRaw = {{ resource_hierarchy_chart_data|tojson|safe }};
@@ -100,6 +103,7 @@
             const deletedNodeIds = new Set();
             const collapsedNodeIds = new Set();
             let focusNodeId = "";
+            const hiddenNodeSnapshots = new Map();
 
             let chart = null;
 
@@ -112,6 +116,48 @@
                     data.addRows(rows);
                 }
                 return data;
+            };
+
+            const getNodeHtml = (row) => {
+                const value = row[0];
+                if (!value || typeof value !== "object" || !value.f) {
+                    return "";
+                }
+                return value.f;
+            };
+
+            const setNodeHtml = (row, html) => {
+                const value = row[0];
+                if (!value || typeof value !== "object") {
+                    return row;
+                }
+                return [
+                    {
+                        ...value,
+                        f: html,
+                    },
+                    row[1],
+                    row[2],
+                ];
+            };
+
+            const buildHiddenHtml = (html) => {
+                const wrapper = document.createElement("div");
+                wrapper.innerHTML = html;
+                const node = wrapper.querySelector(".org-chart-node");
+                if (!node) {
+                    return html;
+                }
+                const type = node.getAttribute("data-node-type") || "";
+                const iconImg = node.querySelector(".org-chart-icon img");
+                if (iconImg && type) {
+                    iconImg.src = `/static/img/${type}_hidden.png`;
+                }
+                const text = node.querySelector(".org-chart-text");
+                if (text) {
+                    text.textContent = "<Hidden>";
+                }
+                return wrapper.innerHTML;
             };
 
             const getNodeId = (row) => {
@@ -150,6 +196,41 @@
                 return counts;
             };
 
+            const getNodeTypeFromRow = (row) => {
+                const value = row[0];
+                if (!value || typeof value !== "object" || !value.f) {
+                    return "";
+                }
+                const match = value.f.match(/data-node-type=\"([^\"]+)\"/);
+                return match ? match[1] : "";
+            };
+
+            const getIconHtmlFromRow = (row) => {
+                const value = row[0];
+                if (!value || typeof value !== "object" || !value.f) {
+                    return "";
+                }
+                const wrapper = document.createElement("div");
+                wrapper.innerHTML = value.f;
+                const icon = wrapper.querySelector(".org-chart-icon");
+                return icon ? icon.innerHTML : "";
+            };
+
+            const buildTypeIconMap = (rows) => {
+                const map = {};
+                rows.forEach((row) => {
+                    const type = getNodeTypeFromRow(row);
+                    if (!type || map[type]) {
+                        return;
+                    }
+                    const iconHtml = getIconHtmlFromRow(row);
+                    if (iconHtml) {
+                        map[type] = iconHtml;
+                    }
+                });
+                return map;
+            };
+
             const collectSubtree = (rootId, childrenMap) => {
                 const toVisit = [rootId];
                 const collected = new Set();
@@ -165,7 +246,7 @@
                 return collected;
             };
 
-            const applyCountsToRows = (rows, countMap, collapsedSet) => {
+            const applyCountsToRows = (rows, allRows, countMap, collapsedSet, childrenMap, typeIconMap) => {
                 return rows.map((row) => {
                     const nodeId = getNodeId(row);
                     if (!collapsedSet.has(nodeId)) {
@@ -179,9 +260,38 @@
                     if (typeof value !== "object" || !value.f) {
                         return row;
                     }
+                    const subtree = collectSubtree(nodeId, childrenMap);
+                    subtree.delete(nodeId);
+                    const typeCounts = {};
+                    allRows.forEach((candidate) => {
+                        const candidateId = getNodeId(candidate);
+                        if (!subtree.has(candidateId)) {
+                            return;
+                        }
+                        const type = getNodeTypeFromRow(candidate);
+                        if (!type) {
+                            return;
+                        }
+                        typeCounts[type] = (typeCounts[type] || 0) + 1;
+                    });
+                    const orderedTypes = ["folder", "project"];
+                    const summary = orderedTypes
+                        .filter((type) => typeCounts[type])
+                        .map((type) => {
+                            const typeCount = typeCounts[type];
+                            const iconHtml = typeIconMap[type] || "";
+                            if (!iconHtml) {
+                                return `<span class=\"org-chart-count\">${type}x${typeCount}</span>`;
+                            }
+                            return `<span class=\"org-chart-collapsed\">${iconHtml}<span class=\"org-chart-mult\">x${typeCount}</span></span>`;
+                        })
+                        .join(" ");
+                    if (!summary) {
+                        return row;
+                    }
                     const updated = value.f.replace(
                         /(<div class=\"org-chart-text\">)([\s\S]*?)(<\/div>)/,
-                        `$1$2 <span class=\"org-chart-count\">(${count})<\/span>$3`
+                        `$1$2<br><span class=\"org-chart-summary\">${summary}</span>$3`
                     );
                     return [
                         {
@@ -211,8 +321,11 @@
 
             const renderChart = () => {
                 currentRows = buildVisibleRows();
-                const countMap = buildChildCountMap(originalRows.filter((row) => !deletedNodeIds.has(getNodeId(row))));
-                const rowsWithCounts = applyCountsToRows(currentRows, countMap, collapsedNodeIds);
+                const visibleRows = originalRows.filter((row) => !deletedNodeIds.has(getNodeId(row)));
+                const countMap = buildChildCountMap(visibleRows);
+                const childrenMap = buildChildrenMap(visibleRows);
+                const typeIconMap = buildTypeIconMap(visibleRows);
+                const rowsWithCounts = applyCountsToRows(currentRows, visibleRows, countMap, collapsedNodeIds, childrenMap, typeIconMap);
                 const data = buildDataTable(rowsWithCounts);
                 if (data.getNumberOfRows() === 0) {
                     container.innerHTML = "";
@@ -240,6 +353,10 @@
                         if (focusButton) {
                             focusButton.disabled = true;
                         }
+                        if (toggleButton) {
+                            toggleButton.disabled = true;
+                            toggleButton.textContent = "Hide";
+                        }
                         return;
                     }
                     const rowIndex = selection[0].row;
@@ -249,12 +366,20 @@
                         if (focusButton) {
                             focusButton.disabled = true;
                         }
+                        if (toggleButton) {
+                            toggleButton.disabled = true;
+                            toggleButton.textContent = "Hide";
+                        }
                         return;
                     }
                     selectedNodeId = getNodeId(currentRows[rowIndex]);
                     deleteButton.disabled = !selectedNodeId;
                     if (focusButton) {
                         focusButton.disabled = !selectedNodeId;
+                    }
+                    if (toggleButton) {
+                        toggleButton.disabled = !selectedNodeId;
+                        toggleButton.textContent = hiddenNodeSnapshots.has(selectedNodeId) ? "Show" : "Hide";
                     }
                 });
                 chart.draw(data, { allowHtml: true });
@@ -275,6 +400,10 @@
                 restoreButton.disabled = currentRows.length === originalRows.length;
                 if (saveButton) {
                     saveButton.disabled = currentRows.length === 0;
+                }
+                if (toggleButton) {
+                    toggleButton.disabled = !selectedNodeId;
+                    toggleButton.textContent = hiddenNodeSnapshots.has(selectedNodeId) ? "Show" : "Hide";
                 }
             };
 
@@ -304,11 +433,48 @@
                 renderChart();
             });
 
+            if (toggleButton) {
+                toggleButton.addEventListener("click", () => {
+                    if (!selectedNodeId) {
+                        return;
+                    }
+                    const rowIndex = originalRows.findIndex((row) => getNodeId(row) === selectedNodeId);
+                    if (rowIndex === -1) {
+                        return;
+                    }
+                    const currentRow = originalRows[rowIndex];
+                    const currentHtml = getNodeHtml(currentRow);
+                    if (!currentHtml) {
+                        return;
+                    }
+                    if (hiddenNodeSnapshots.has(selectedNodeId)) {
+                        const originalHtml = hiddenNodeSnapshots.get(selectedNodeId);
+                        originalRows[rowIndex] = setNodeHtml(currentRow, originalHtml);
+                        hiddenNodeSnapshots.delete(selectedNodeId);
+                    } else {
+                        hiddenNodeSnapshots.set(selectedNodeId, currentHtml);
+                        const hiddenHtml = buildHiddenHtml(currentHtml);
+                        originalRows[rowIndex] = setNodeHtml(currentRow, hiddenHtml);
+                    }
+                    renderChart();
+                });
+            }
+
             restoreButton.addEventListener("click", () => {
                 deletedNodeIds.clear();
                 collapsedNodeIds.clear();
                 selectedNodeId = "";
                 focusNodeId = "";
+                if (hiddenNodeSnapshots.size > 0) {
+                    originalRows = originalRows.map((row) => {
+                        const nodeId = getNodeId(row);
+                        if (hiddenNodeSnapshots.has(nodeId)) {
+                            return setNodeHtml(row, hiddenNodeSnapshots.get(nodeId));
+                        }
+                        return row;
+                    });
+                    hiddenNodeSnapshots.clear();
+                }
                 renderChart();
             });
 
@@ -346,6 +512,12 @@
                                 clonedDoc
                                     .querySelectorAll(".google-visualization-orgchart-node-selected")
                                     .forEach((node) => node.classList.remove("google-visualization-orgchart-node-selected"));
+                                clonedDoc
+                                    .querySelectorAll("#resource-hierarchy-chart-scale, #resource-hierarchy-chart, .google-visualization-orgchart-node")
+                                    .forEach((node) => {
+                                        node.style.boxShadow = "none";
+                                        node.style.filter = "none";
+                                    });
                             },
                         });
                         const link = document.createElement("a");
