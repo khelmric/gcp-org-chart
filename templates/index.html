@@ -16,8 +16,13 @@
         </div>
 
         <div id="controls">
-            <span style="padding-right: 20px">User: {{ current_account }} </span><br>
-            <button id="saveBtn" onclick="printReport()">Print report</button>
+            <span style="padding-right: 20px">
+                {% if current_account == "none" %}
+                    🔴 {{ current_account }}
+                {% else %}
+                    🟢 {{ current_account }}
+                {% endif %}
+            </span><br>
         </div>
     </header>
     <config>
@@ -26,17 +31,18 @@
                 <section class="form-row">
                     <label for="resourceId"><b>Resource ID:</b></label>
                     <input type="text" class="section-input" id="resourceId" name="resourceId" autofocus value="{{ resource_id }}"  style="width: 17em">
+                    <button type="submit" id="load-resources" style="display: none;" aria-hidden="true">Load</button>
                     <label for="search-input"><b>Search:</b></label>
                     <input type="text" id="search-input" class="search-input" disabled>
                     <button id="focus-node" type="button" style="margin-left: 8px;" disabled>Focus item</button>
                     <button id="delete-node" type="button" style="margin-left: 8px;" disabled>Delete item</button>
                     <button id="restore-chart" type="button" style="margin-left: 6px;" disabled>Restore chart</button>
+                    <button id="save-chart" type="button" style="margin-left: 6px;" disabled>Save</button>
                 </section>
                 <section>
                     <span id="error_msg" style="color: red;vertical-align: top;visibility: hidden;">{{error_msg|safe}}</span>
                 </section>
             </form>
-            <hr>
         </div>
     </config>
     <main>
@@ -49,11 +55,10 @@
                 <div id="resource-hierarchy-chart"></div>
             </div>
         </div>
-        
-
+    
     </main>
-    <br><hr><br>
 
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
     <script>
         // SHOW LOADING ////////////////////////////////////////////
 
@@ -75,8 +80,10 @@
 
             const deleteButton = document.getElementById("delete-node");
             const restoreButton = document.getElementById("restore-chart");
+            const saveButton = document.getElementById("save-chart");
             const searchInput = document.getElementById("search-input");
             const focusButton = document.getElementById("focus-node");
+            const resourceIdValue = "{{ resource_id }}";
 
             const chartDataRaw = {{ resource_hierarchy_chart_data|tojson|safe }};
             let originalRows = [];
@@ -211,6 +218,9 @@
                     container.innerHTML = "";
                     deleteButton.disabled = true;
                     restoreButton.disabled = currentRows.length === originalRows.length;
+                    if (saveButton) {
+                        saveButton.disabled = true;
+                    }
                     if (focusButton) {
                         focusButton.disabled = true;
                     }
@@ -263,6 +273,9 @@
                     focusButton.disabled = !selectedNodeId;
                 }
                 restoreButton.disabled = currentRows.length === originalRows.length;
+                if (saveButton) {
+                    saveButton.disabled = currentRows.length === 0;
+                }
             };
 
             const highlightSearchMatches = (query) => {
@@ -298,6 +311,58 @@
                 focusNodeId = "";
                 renderChart();
             });
+
+            if (saveButton) {
+                saveButton.addEventListener("click", async () => {
+                    const chartRoot = document.getElementById("resource-hierarchy-chart-scale");
+                    const chartElement = document.getElementById("resource-hierarchy-chart");
+                    if (!chartRoot || !chartElement) {
+                        return;
+                    }
+                    saveButton.disabled = true;
+                    const previousTransform = chartRoot.style.transform;
+                    const previousWidth = chartElement.style.width;
+                    const previousHeight = chartElement.style.height;
+                    try {
+                        chartRoot.style.transform = "none";
+                        const fullWidth = Math.max(chartElement.scrollWidth, chartElement.offsetWidth, chartElement.clientWidth);
+                        const fullHeight = Math.max(chartElement.scrollHeight, chartElement.offsetHeight, chartElement.clientHeight);
+                        chartElement.style.width = `${fullWidth}px`;
+                        chartElement.style.height = `${fullHeight}px`;
+                        const canvas = await html2canvas(chartElement, {
+                            backgroundColor: "#ffffff",
+                            useCORS: true,
+                            scale: 2,
+                            width: fullWidth,
+                            height: fullHeight,
+                            windowWidth: fullWidth,
+                            windowHeight: fullHeight,
+                            scrollX: 0,
+                            scrollY: 0,
+                            onclone: (clonedDoc) => {
+                                clonedDoc
+                                    .querySelectorAll(".org-chart-highlight")
+                                    .forEach((node) => node.classList.remove("org-chart-highlight"));
+                                clonedDoc
+                                    .querySelectorAll(".google-visualization-orgchart-node-selected")
+                                    .forEach((node) => node.classList.remove("google-visualization-orgchart-node-selected"));
+                            },
+                        });
+                        const link = document.createElement("a");
+                        const safeId = (resourceIdValue || "chart").replace(/[^a-zA-Z0-9_-]+/g, "_");
+                        link.download = `chart_${safeId}.png`;
+                        link.href = canvas.toDataURL("image/png");
+                        link.click();
+                    } catch (err) {
+                        console.error("Failed to save chart", err);
+                    } finally {
+                        chartRoot.style.transform = previousTransform;
+                        chartElement.style.width = previousWidth;
+                        chartElement.style.height = previousHeight;
+                        saveButton.disabled = currentRows.length === 0;
+                    }
+                });
+            }
 
             if (focusButton) {
                 focusButton.addEventListener("click", () => {
@@ -431,6 +496,19 @@
 
         google.charts.load('current', { packages: ['orgchart'] });
         google.charts.setOnLoadCallback(drawOrgChart);
+
+        const resourceInput = document.getElementById("resourceId");
+        const configForm = document.getElementById("config_form");
+        if (resourceInput && configForm) {
+            resourceInput.addEventListener("keydown", (event) => {
+                if (event.key === "Enter") {
+                    event.preventDefault();
+                    if (showLoadingSpinner()) {
+                        configForm.submit();
+                    }
+                }
+            });
+        }
 
 
 
