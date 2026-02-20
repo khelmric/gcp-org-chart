@@ -1,160 +1,204 @@
 body {
-    font-family: Arial, sans-serif;
-    font-size: small;
-    margin: 0;
-    padding: 0;
-    display: flex;
-    flex-direction: column;
-    height: 100vh;
+	font-family: Arial, sans-serif;
+	font-size: small;
+	margin: 0;
+	padding-top: 50px;
+	display: block;
+	flex-direction: column;
+	height: 100vh;
 }
+
+#loading {
+	display: none;
+	text-align: center;
+	margin-top: 40px;
+}
+
+#loading img {
+	width: 80px;
+}
+
 header {
-    background-color: #0179e3;
-    color: white;
-    padding: 10px 20px;
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
+	position: fixed;
+	top: 0;
+	background-color: #0179e3;
+	color: white;
+	padding: 10px 90px 10px 10px;
+	display: flex;
+	justify-content: space-between;
+	align-items: center;
+	left: 0;
+	width: 100%;
+	z-index: 1000;
 }
+
+header .left {
+	display: flex;
+	align-items: center;
+	gap: 10px;
+}
+
+header h2 {
+	margin: 0;
+}
+
 header button {
-    background-color: #666666;
-    color: white;
-    border: none;
-    padding: 5px 10px;
-    cursor: pointer;
-    border-radius: 5px;
+	background-color: #666666;
+	color: white;
+	border: none;
+	padding: 5px 10px;
+	cursor: pointer;
+	border-radius: 5px;
 }
+
 header button:hover {
-    background-color: #323232;
+	background-color: #323232;
 }
+
 main {
-    position: relative;
-    display: flex;
-    flex-grow: 1;
-    overflow: hidden;
-    transition: all 0.4s ease;
-}
-aside {
-    width: 25%;
-    padding: 10px;
-    border-right: 1px solid #ccc;
-    overflow-y: auto;
-    transition: transform 0.4s ease, opacity 0.4s ease;
-}
-aside.hidden {
-    transform: translateX(-100%); /* Move it off-screen to the left */
-    opacity: 0; /* Fade out */
-    pointer-events: none; /* Disable interactions while hidden */
-    display: none;
-}
-#toggleAside {
-    position: absolute;
-    top: 10px;
-    left: 10px; /* Adjust based on your layout */
-    z-index: 1000;
-    background-color: #666666;
-    color: white;
-    border: none;
-    padding: 5px 10px;
-    cursor: pointer;
-    border-radius: 5px;
-    transition: background-color 0.3s ease;
+	position: relative;
+	display: block;
+	overflow-y: auto;
+	overflow-x: hidden;
+	transition: all 0.4s ease;
 }
 
-#toggleServices {
-    position: absolute;
-    top: 10px;
-    right: 10px; /* Adjust based on your layout */
-    z-index: 1000;
-    background-color: #666666;
-    color: white;
-    border: none;
-    padding: 5px 10px;
-    cursor: pointer;
-    border-radius: 5px;
-    transition: background-color 0.3s ease;
+.configDiv {
+	flex: 1;
+	display: block;
+	margin-left: 35px;
+	margin-right: 35px;
 }
 
-#toggleAside:hover {
-    background-color: #323232;
+config {
+	padding: 10px;
+	margin-top: 35px;
+	overflow: hidden;
+	transition: max-height 0.4s ease, opacity 0.4s ease, margin 0.4s ease;
+	max-height: 500px;
+	opacity: 1;
 }
-aside h3 {
-    border-bottom: 1px solid #ccc;
-    padding: 2px 2px 2px 6px;
-    background-color: #e7e7e7;
+
+config.hidden {
+	transform: translateY(-100%);
+	opacity: 0;
+	pointer-events: none;
+	visibility: hidden;
+	display: inline-block;
+	margin-top: 0;
+	max-height: 0;
 }
 
 section {
-    margin-bottom: 20px;
-}
-.tenant-section {
-    margin-top: 20px;
-}
-.section-input {
-    display: block;
-    margin-bottom: 10px;
-    width: calc(100% - 20px);
-    padding: 5px;
-}
-.section-content {
-    display: none;
-    margin-top: 10px;
-}
-.section-content.visible {
-    display: block;
-}
-.sub-section {
-    margin-left: 20px;
-}
-.sub-section-content {
-    display: block;
-    margin-top: 10px;
-}
-.toggle-btn {
-    margin-top: 5px;
-    margin-bottom: 5px;
-    cursor: pointer;
-    background: #eee;
-    border: none;
-    padding: 5px 10px;
-    font-weight: bold;
+	margin-bottom: 20px;
 }
 
-.collapsible-content {
-    margin-top: 10px;
-    padding-left: 15px;
-    border-left: 2px solid #ccc;
+.form-row {
+	display: flex;
+	align-items: center;
+	gap: 8px;
+	flex-wrap: wrap;
 }
-.false {
-    display: none;
+
+.section-input {
+	display: inline-block;
+	margin-top: 5px;
+	margin-bottom: 10px;
+	width: calc(100% - 20px);
+	padding: 5px;
 }
-.topLevelFolder {
-    margin-top: 4px;
+
+.search-input {
+	display: inline-block;
+	margin-top: 5px;
+	margin-bottom: 10px;
+	width: 12em;
+	padding: 5px;
 }
-#chart {
-    position: relative;
-    flex-grow: 1;
-    margin-top: 25px;
-    padding: 10px;
-    overflow: auto;
-    transition: width 0.4s ease;
-    width: calc(100% - 25%);
+
+#resource-hierarchy-chart-scale {
+	transform-origin: top left;
+	position: relative;
+	display: block;
+	margin-top: 25px;
+	padding: 0 10px;
+	overflow-x: visible;
+	overflow-y: visible;
+	height: 100% !important;
+	width: 100% !important;
+	cursor: grab;
 }
-main.fullscreen-chart #chart {
-    width: 100%;
-    padding: 15px; 
-    margin-left: 0;
+
+.org-chart-node {
+	display: inline-flex;
+	flex-direction: column;
+	align-items: center;
+	justify-content: flex-start;
+	gap: 2px;
+	font-size: 11px;
+	line-height: 1.1;
+	white-space: normal;
+	min-width: 120px;
+	max-width: 190px;
+	padding: 0;
+	margin: 0;
 }
-main.fullscreen-chart {
-    justify-content: center; /* Center the chart horizontally when aside is hidden */
+
+.org-chart-node-row {
+	flex-direction: row;
+	align-items: center;
+	justify-content: flex-start;
+	gap: 4px;
 }
-.blinking-image {
-    animation: blink 1s infinite; /* 1-second cycle, repeats infinitely */
-    width: 15px;
-    height: 15px;
-    display:inline-block;
-    vertical-align:middle;
+
+.org-chart-icon img {
+	display: block;
 }
-@keyframes blink {
-    0%, 50% { opacity: 1; } /* Visible */
-    50.01%, 100% { opacity: 0; } /* Hidden */
+
+.org-chart-text {
+	font-weight: 500;
+	text-align: center;
+	word-break: normal;
+	overflow-wrap: break-word;
+	max-width: 220px;
+	margin: 0;
+}
+
+.org-chart-count {
+	font-weight: 500;
+	margin-left: 4px;
+	color: #666666;
+}
+
+.org-chart-highlight {
+	background-color: #64ed3a;
+}
+
+#saveBtn {
+	margin-top: 4px;
+}
+
+@media print {
+	config {
+		display: none;
+	}
+
+	#controls {
+		display: none;
+	}
+
+	#resource-hierarchy-chart-scale,
+	main {
+		display: block !important;
+		overflow: visible !important;
+		height: auto !important;
+		width: auto !important;
+	}
+
+	#resource-hierarchy-chart-scale {
+		transform-origin: top left;
+		display: block !important;
+		overflow: visible !important;
+		height: auto !important;
+	}
 }

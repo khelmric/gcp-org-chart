@@ -58,7 +58,7 @@ def asset_data2html(resources_list, resource_id, resource_display_name, resource
                 else:
                     icon_html = resource_type_icons.get(res_type, "")
                     node_html = (
-                        "<div class=\"org-chart-node\">"
+                        f"<div class=\"org-chart-node\" data-node-id=\"{name}\">"
                         f"<div class=\"org-chart-icon\">{icon_html}</div>"
                         f"<div class=\"org-chart-text\">{display_name}</div>"
                         "</div>"
@@ -88,31 +88,35 @@ def asset_data2html(resources_list, resource_id, resource_display_name, resource
             continue
 
     project_icon = resource_type_icons.get("project", "")
+    max_cluster_size = 10
     for parent_id, projects in projects_by_parent.items():
         if not projects:
             continue
         ordered_projects = sorted(projects, key=lambda p: p.get("name", ""))
-        previous_id = parent_id
-        for project in ordered_projects:
-            project_id = project.get("id", "")
-            project_name = project.get("name", "")
-            if not project_id:
-                continue
-            node_html = (
-                "<div class=\"org-chart-node org-chart-node-row\">"
-                f"<div class=\"org-chart-icon\">{project_icon}</div>"
-                f"<div class=\"org-chart-text\">{project_name}</div>"
-                "</div>"
-            )
-            chart_rows.append([
-                {
-                    "v": project_id,
-                    "f": node_html,
-                },
-                previous_id,
-                project_id,
-            ])
-            previous_id = project_id
+
+        for start_idx in range(0, len(ordered_projects), max_cluster_size):
+            cluster = ordered_projects[start_idx:start_idx + max_cluster_size]
+            previous_id = parent_id
+            for project in cluster:
+                project_id = project.get("id", "")
+                project_name = project.get("name", "")
+                if not project_id:
+                    continue
+                node_html = (
+                    f"<div class=\"org-chart-node org-chart-node-row\" data-node-id=\"{project_id}\">"
+                    f"<div class=\"org-chart-icon\">{project_icon}</div>"
+                    f"<div class=\"org-chart-text\">{project_name}</div>"
+                    "</div>"
+                )
+                chart_rows.append([
+                    {
+                        "v": project_id,
+                        "f": node_html,
+                    },
+                    previous_id,
+                    project_id,
+                ])
+                previous_id = project_id
     
     # Only render org chart HTML
     resource_hierarchy_html = f'''<div id="chart-wrapper">
