@@ -50,7 +50,7 @@ Click **Next** to proceed.
 Run the app:
 
 ```bash
-python main.py
+python3 main.py
 ```
 
 Open the web preview:
