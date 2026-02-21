@@ -16,8 +16,9 @@
         </div>
 
         <div id="controls">
+            <button id="theme-toggle" type="button" style="margin-right: 12px;" aria-label="Toggle dark mode" title="Toggle dark mode">🌙</button>
             <span style="padding-right: 20px">
-                {% if current_account == "none" %}
+                {% if current_account == "unauthenticated user" %}
                     🔴 {{ current_account }}
                 {% else %}
                     🟢 {{ current_account }}
@@ -38,7 +39,9 @@
                     <button id="focus-node" type="button" style="margin-left: 8px;" disabled>Focus</button>
                     <button id="toggle-visibility" type="button" style="margin-left: 8px;" disabled>Hide</button>
                     <button id="delete-node" type="button" style="margin-left: 8px;" disabled>Delete</button>
-                    <button id="restore-chart" type="button" style="margin-left: 6px;" disabled>Restore</button>
+                    <button id="undo-action" type="button" style="margin-left: 6px;" disabled aria-label="Undo" title="Undo">↺</button>
+                    <button id="redo-action" type="button" style="margin-left: 6px;" disabled aria-label="Redo" title="Redo">↻</button>
+                    <button id="restore-chart" type="button" style="margin-left: 6px;" disabled>Reset all</button>
                     <button id="save-chart" type="button" style="margin-left: 6px;" disabled>Save</button>
                 </section>
                 <section>
@@ -86,6 +89,8 @@
             const searchInput = document.getElementById("search-input");
             const focusButton = document.getElementById("focus-node");
             const toggleButton = document.getElementById("toggle-visibility");
+            const undoButton = document.getElementById("undo-action");
+            const redoButton = document.getElementById("redo-action");
             const resourceIdValue = "{{ resource_id }}";
 
             const chartDataRaw = {{ resource_hierarchy_chart_data|tojson|safe }};
@@ -104,6 +109,8 @@
             const collapsedNodeIds = new Set();
             let focusNodeId = "";
             const hiddenNodeSnapshots = new Map();
+            const undoStack = [];
+            const redoStack = [];
 
             let chart = null;
 
@@ -116,6 +123,60 @@
                     data.addRows(rows);
                 }
                 return data;
+            };
+
+            const clearSelectionHighlight = () => {
+                container
+                    .querySelectorAll(".org-chart-node.node-selected")
+                    .forEach((node) => node.classList.remove("node-selected"));
+            };
+
+            const applySelectionHighlight = () => {
+                clearSelectionHighlight();
+                if (!selectedNodeId) {
+                    return;
+                }
+                const node = container.querySelector(`.org-chart-node[data-node-id="${selectedNodeId}"]`);
+                if (node) {
+                    node.classList.add("node-selected");
+                }
+            };
+
+            const serializeState = () => {
+                const hiddenEntries = Array.from(hiddenNodeSnapshots.entries());
+                return {
+                    deletedNodeIds: Array.from(deletedNodeIds),
+                    collapsedNodeIds: Array.from(collapsedNodeIds),
+                    focusNodeId,
+                    hiddenNodeSnapshots: hiddenEntries,
+                    originalRows: JSON.parse(JSON.stringify(originalRows)),
+                };
+            };
+
+            const applyState = (state) => {
+                deletedNodeIds.clear();
+                state.deletedNodeIds.forEach((id) => deletedNodeIds.add(id));
+                collapsedNodeIds.clear();
+                state.collapsedNodeIds.forEach((id) => collapsedNodeIds.add(id));
+                focusNodeId = state.focusNodeId || "";
+                hiddenNodeSnapshots.clear();
+                state.hiddenNodeSnapshots.forEach(([id, html]) => hiddenNodeSnapshots.set(id, html));
+                originalRows = JSON.parse(JSON.stringify(state.originalRows));
+                selectedNodeId = "";
+            };
+
+            const pushUndoState = () => {
+                undoStack.push(serializeState());
+                redoStack.length = 0;
+            };
+
+            const updateUndoRedoButtons = () => {
+                if (undoButton) {
+                    undoButton.disabled = undoStack.length === 0;
+                }
+                if (redoButton) {
+                    redoButton.disabled = redoStack.length === 0;
+                }
             };
 
             const getNodeHtml = (row) => {
@@ -349,6 +410,7 @@
                     const selection = chart.getSelection();
                     if (!selection.length) {
                         selectedNodeId = "";
+                        clearSelectionHighlight();
                         deleteButton.disabled = true;
                         if (focusButton) {
                             focusButton.disabled = true;
@@ -362,6 +424,7 @@
                     const rowIndex = selection[0].row;
                     if (rowIndex === null || rowIndex === undefined) {
                         selectedNodeId = "";
+                        clearSelectionHighlight();
                         deleteButton.disabled = true;
                         if (focusButton) {
                             focusButton.disabled = true;
@@ -373,6 +436,7 @@
                         return;
                     }
                     selectedNodeId = getNodeId(currentRows[rowIndex]);
+                    applySelectionHighlight();
                     deleteButton.disabled = !selectedNodeId;
                     if (focusButton) {
                         focusButton.disabled = !selectedNodeId;
@@ -383,6 +447,8 @@
                     }
                 });
                 chart.draw(data, { allowHtml: true });
+
+                applySelectionHighlight();
 
                 if (searchInput) {
                     searchInput.disabled = false;
@@ -405,6 +471,7 @@
                     toggleButton.disabled = !selectedNodeId;
                     toggleButton.textContent = hiddenNodeSnapshots.has(selectedNodeId) ? "Show" : "Hide";
                 }
+                updateUndoRedoButtons();
             };
 
             const highlightSearchMatches = (query) => {
@@ -426,6 +493,7 @@
                 if (!selectedNodeId) {
                     return;
                 }
+                pushUndoState();
                 const childrenMap = buildChildrenMap(originalRows.filter((row) => !deletedNodeIds.has(getNodeId(row))));
                 const toRemove = collectSubtree(selectedNodeId, childrenMap);
                 toRemove.forEach((nodeId) => deletedNodeIds.add(nodeId));
@@ -438,6 +506,7 @@
                     if (!selectedNodeId) {
                         return;
                     }
+                    pushUndoState();
                     const rowIndex = originalRows.findIndex((row) => getNodeId(row) === selectedNodeId);
                     if (rowIndex === -1) {
                         return;
@@ -460,7 +529,32 @@
                 });
             }
 
+            if (undoButton) {
+                undoButton.addEventListener("click", () => {
+                    if (undoStack.length === 0) {
+                        return;
+                    }
+                    redoStack.push(serializeState());
+                    const previous = undoStack.pop();
+                    applyState(previous);
+                    renderChart();
+                });
+            }
+
+            if (redoButton) {
+                redoButton.addEventListener("click", () => {
+                    if (redoStack.length === 0) {
+                        return;
+                    }
+                    undoStack.push(serializeState());
+                    const next = redoStack.pop();
+                    applyState(next);
+                    renderChart();
+                });
+            }
+
             restoreButton.addEventListener("click", () => {
+                pushUndoState();
                 deletedNodeIds.clear();
                 collapsedNodeIds.clear();
                 selectedNodeId = "";
@@ -495,8 +589,9 @@
                         const fullHeight = Math.max(chartElement.scrollHeight, chartElement.offsetHeight, chartElement.clientHeight);
                         chartElement.style.width = `${fullWidth}px`;
                         chartElement.style.height = `${fullHeight}px`;
+                        const isDarkTheme = document.body.getAttribute("data-theme") === "dark";
                         const canvas = await html2canvas(chartElement, {
-                            backgroundColor: "#ffffff",
+                            backgroundColor: isDarkTheme ? "#0b1120" : "#ffffff",
                             useCORS: true,
                             scale: 2,
                             width: fullWidth,
@@ -506,12 +601,18 @@
                             scrollX: 0,
                             scrollY: 0,
                             onclone: (clonedDoc) => {
+                                if (isDarkTheme) {
+                                    clonedDoc.body.setAttribute("data-theme", "dark");
+                                }
                                 clonedDoc
                                     .querySelectorAll(".org-chart-highlight")
                                     .forEach((node) => node.classList.remove("org-chart-highlight"));
                                 clonedDoc
                                     .querySelectorAll(".google-visualization-orgchart-node-selected")
                                     .forEach((node) => node.classList.remove("google-visualization-orgchart-node-selected"));
+                                clonedDoc
+                                    .querySelectorAll(".org-chart-node.node-selected")
+                                    .forEach((node) => node.classList.remove("node-selected"));
                                 clonedDoc
                                     .querySelectorAll("#resource-hierarchy-chart-scale, #resource-hierarchy-chart, .google-visualization-orgchart-node")
                                     .forEach((node) => {
@@ -541,6 +642,7 @@
                     if (!selectedNodeId) {
                         return;
                     }
+                    pushUndoState();
                     focusNodeId = selectedNodeId;
                     renderChart();
                 });
@@ -558,6 +660,7 @@
                 if (!nodeId) {
                     return;
                 }
+                pushUndoState();
                 if (collapsedNodeIds.has(nodeId)) {
                     collapsedNodeIds.delete(nodeId);
                 } else {
@@ -679,6 +782,26 @@
                         configForm.submit();
                     }
                 }
+            });
+        }
+
+        const themeToggle = document.getElementById("theme-toggle");
+        const applyTheme = (mode) => {
+            document.body.setAttribute("data-theme", mode);
+            if (themeToggle) {
+                themeToggle.textContent = mode === "dark" ? "☀️" : "🌙";
+                themeToggle.setAttribute("aria-label", mode === "dark" ? "Switch to light mode" : "Switch to dark mode");
+                themeToggle.setAttribute("title", mode === "dark" ? "Switch to light mode" : "Switch to dark mode");
+            }
+            localStorage.setItem("theme", mode);
+        };
+
+        if (themeToggle) {
+            const savedTheme = localStorage.getItem("theme") || "light";
+            applyTheme(savedTheme);
+            themeToggle.addEventListener("click", () => {
+                const current = document.body.getAttribute("data-theme") || "light";
+                applyTheme(current === "dark" ? "light" : "dark");
             });
         }
 

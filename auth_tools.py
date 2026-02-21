@@ -24,6 +24,6 @@ def get_authenticated_account():
             if resp.ok:
                 account_info = resp.json().get("email")
         except:
-            account_info = "none"
+            account_info = "unauthenticated user"
 
     return account_info, project_id

@@ -20,14 +20,14 @@ def index():
     error_msg = ""
     exception_error_msg = ""
     
-    if account == "none":
+    if account == "unauthenticated user":
         error_msg = error_msg + f"""<br>ERROR - No authenticated user found, please login with your user:<pre><code>
         gcloud auth login
         gcloud auth application-default login
         </code></pre>"""
         
     # Get inputs
-    if request.method == "GET" and account != "none":
+    if request.method == "GET" and account != "unauthenticated user":
         try:
             resource_id = request.args.get("resourceId", "")
             if resource_id:
