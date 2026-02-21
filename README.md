@@ -51,5 +51,9 @@ This repo includes an app.yaml configured for Gunicorn.
 ## Notes
 - The Org Chart uses the Cloud Asset Inventory API (searchAllResources). Ensure the caller has permissions for the resource scope.
 
+## Buy me a coffee
+If this project helps you, you can support it here:
+https://buymeacoffee.com/khelmric
+
 ## License
 See LICENSE.
