@@ -26,20 +26,22 @@ Click **Start** to proceed.
 ## Prepare the environment
 Run the following commands in Cloud Shell:
 
-```bash
-cd ~/gcp-org-chart
-```
-
 Install Python dependencies:
 
 ```bash
-pip install -r requirements.txt
+pip3 install -r requirements.txt
 ```
 
 Authenticate with Application Default Credentials:
 
 ```bash
 gcloud auth application-default login
+```
+
+Set the ADC quota project to the selected project:
+
+```bash
+gcloud auth application-default set-quota-project <walkthrough-project-id/>
 ```
 
 Click **Next** to proceed.
