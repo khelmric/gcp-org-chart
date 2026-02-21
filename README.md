@@ -40,6 +40,14 @@ This repo includes an app.yaml configured for Gunicorn.
 2. Deploy:
 	gcloud app deploy
 
+## Screenshots
+
+### Light-mode
+![Alt text](examples/light-mode.png?raw=true "Light-mode")
+
+### Dark-mode
+![Alt text](examples/dark-mode.png?raw=true "Dark-mode")
+
 ## Notes
 - The Org Chart uses the Cloud Asset Inventory API (searchAllResources). Ensure the caller has permissions for the resource scope.
 
