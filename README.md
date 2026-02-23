@@ -17,9 +17,9 @@ Web app that visualizes Google Cloud resource hierarchy (organization → folder
 ## Setup
 1. Install dependencies:
 	pip install -r requirements.txt
-2. Authenticate:
-	gcloud auth login
+2. Authenticate & set quota project:
 	gcloud auth application-default login
+    gcloud auth application-default set-quota-project [PROJECT_ID]
 
 ## Run locally
 python main.py

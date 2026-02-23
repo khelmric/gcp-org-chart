@@ -30,12 +30,12 @@
         <div id="config-div" class="configDiv">
             <form method="get" id="config_form" action="/" style="display: inline;" onsubmit="return showLoadingSpinner();">
                 <section class="form-row">
-                    <label for="resourceId"><b>Resource ID:</b></label>
-                    <input type="text" class="section-input" id="resourceId" name="resourceId" autofocus value="{{ resource_id }}"  style="width: 17em">
+                    <label for="resourceId" aria-label="Resource ID">ID</label>
+                    <input type="text" class="section-input" id="resourceId" name="resourceId" autofocus value="{{ resource_id }}" placeholder="Org/Folder/Project ID" style="width: 17em">
                     <button type="submit" id="load-resources" style="display: none;" aria-hidden="true">Load</button>
                     <span class="divider" aria-hidden="true"></span>
-                    <label for="search-input"><b>Search:</b></label>
-                    <input type="text" id="search-input" class="search-input" disabled>
+                    <label for="search-input" aria-label="Search">🔎</label>
+                    <input type="text" id="search-input" class="search-input" disabled placeholder="Search">
                     <button id="focus-node" type="button" style="margin-left: 8px;" disabled>Focus</button>
                     <button id="toggle-visibility" type="button" style="margin-left: 8px;" disabled>Hide</button>
                     <button id="delete-node" type="button" style="margin-left: 8px;" disabled>Delete</button>
