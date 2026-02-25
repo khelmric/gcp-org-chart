@@ -3,11 +3,17 @@
 Web app that visualizes Google Cloud resource hierarchy (organization → folders → projects) using the Cloud Asset Inventory API and an interactive Org Chart.
 
 ## Features
-- Search by resource ID (organization, folder, or project).
-- Interactive org chart with focus, delete, collapse, and restore actions.
-- Hide/show nodes, undo/redo actions.
-- Save chart as PNG.
-- Light/dark mode toggle.
+- Zoom in/out with the mouse wheel.
+- Pan the chart with drag-and-drop (left click + hold).
+- Collapse/expand nodes with double click.
+- Search for any content using the Search field. The search function works in tooltips too where the resource create_date is placed (e.g. search for resources created on the 2025-12-12).
+- Focus on a child resource with the **Focus** button.
+- Hide resources with the **Hide** button.
+- Delete a resource and all children with the **Delete** button.
+- Undo/redo actions with the **↺** and **↻** buttons.
+- Restore the initial view with the **Reset all** button.
+- Switch between light and dark mode.
+- Save the chart as PNG.
 
 ## Prerequisites
 - Python 3.11+
@@ -47,6 +53,9 @@ This repo includes an app.yaml configured for Gunicorn.
 
 ### Dark-mode
 ![Alt text](examples/dark-mode.png?raw=true "Dark-mode")
+
+### Demo
+![Alt text](examples/demo.gif?raw=true "Demo")
 
 ## Notes
 - The Org Chart uses the Cloud Asset Inventory API (searchAllResources). Ensure the caller has permissions for the resource scope.
