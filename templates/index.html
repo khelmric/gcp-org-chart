@@ -483,7 +483,8 @@
                         return;
                     }
                     const text = node.textContent ? node.textContent.toLowerCase() : "";
-                    if (text.includes(term)) {
+                    const tooltip = node.dataset && node.dataset.tooltip ? node.dataset.tooltip.toLowerCase() : "";
+                    if (text.includes(term) || tooltip.includes(term)) {
                         node.classList.add("org-chart-highlight");
                     }
                 });
