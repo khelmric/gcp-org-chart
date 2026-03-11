@@ -9,6 +9,7 @@ Web app that visualizes Google Cloud resource hierarchy (organization → folder
 - Search for any content using the Search field. The search function works in tooltips too where the resource create_date is placed (e.g. search for resources created on the 2025-12-12).
 - Focus on a child resource with the **Focus** button.
 - Hide resources with the **Hide** button.
+- Add temporary folders or projects under a selected organization/folder, or add projects under a selected project with the **Add** button.
 - Delete a resource and all children with the **Delete** button.
 - Undo/redo actions with the **↺** and **↻** buttons.
 - Restore the initial view with the **Reset all** button.
@@ -37,6 +38,8 @@ Open http://localhost:8080
 
 ## Usage
 Enter a resource ID (organization ID, folder ID, or project ID) and press Enter. The hierarchy is loaded and rendered in the chart.
+
+To add a temporary node, select an organization or folder, click **Add**, choose **Folder** or **Project**, and provide a name. If you select a project, only **Project** can be added. Temporary nodes are marked with the *_tmp.png icons and are removed when you click **Reset all**.
 
 ## Deploy to App Engine (Python 3.11)
 This repo includes an app.yaml configured for Gunicorn.

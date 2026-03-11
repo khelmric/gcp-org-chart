@@ -229,6 +229,78 @@ button:disabled {
 #save-chart:disabled {
 	background: #86efac;
 }
+
+#add-node {
+	background: #22c55e;
+}
+
+#add-node:hover:not(:disabled) {
+	background: #16a34a;
+}
+
+#add-node:disabled {
+	background: #86efac;
+}
+
+.add-node-dialog {
+	border: none;
+	border-radius: 16px;
+	padding: 0;
+	box-shadow: var(--shadow);
+	background: var(--surface);
+	color: var(--text);
+	max-width: 360px;
+	width: calc(100% - 32px);
+}
+
+.add-node-dialog::backdrop {
+	background: rgba(15, 23, 42, 0.45);
+}
+
+.add-node-form {
+	display: flex;
+	flex-direction: column;
+	gap: 10px;
+	padding: 18px 20px 20px;
+}
+
+.add-node-form h3 {
+	margin: 0 0 4px;
+	font-size: 16px;
+}
+
+.add-node-form label {
+	font-weight: 600;
+}
+
+.add-node-form select,
+.add-node-form input {
+	padding: 9px 12px;
+	border: 1px solid var(--border);
+	border-radius: 10px;
+	background: var(--surface);
+	color: var(--text);
+}
+
+body[data-theme="dark"] .add-node-form select,
+body[data-theme="dark"] .add-node-form input {
+	background: var(--input-bg);
+}
+
+.add-node-actions {
+	display: flex;
+	justify-content: flex-end;
+	gap: 8px;
+}
+
+#add-node-cancel {
+	background: #e2e8f0;
+	color: #0f172a;
+}
+
+#add-node-cancel:hover:not(:disabled) {
+	background: #cbd5f5;
+}
 #resource-hierarchy-chart-scale {
 	transform-origin: top left;
 	position: relative;

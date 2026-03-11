@@ -38,6 +38,7 @@
                     <input type="text" id="search-input" class="search-input" disabled placeholder="Search">
                     <button id="focus-node" type="button" style="margin-left: 8px;" disabled>Focus</button>
                     <button id="toggle-visibility" type="button" style="margin-left: 8px;" disabled>Hide</button>
+                    <button id="add-node" type="button" style="margin-left: 8px;" disabled>Add</button>
                     <button id="delete-node" type="button" style="margin-left: 8px;" disabled>Delete</button>
                     <button id="undo-action" type="button" style="margin-left: 6px;" disabled aria-label="Undo" title="Undo">↺</button>
                     <button id="redo-action" type="button" style="margin-left: 6px;" disabled aria-label="Redo" title="Redo">↻</button>
@@ -63,6 +64,23 @@
     
     </main>
 
+    <dialog id="add-node-dialog" class="add-node-dialog">
+        <form id="add-node-form" class="add-node-form">
+            <h3>Add child</h3>
+            <label for="add-node-type">Type</label>
+            <select id="add-node-type" required>
+                <option value="folder">Folder</option>
+                <option value="project">Project</option>
+            </select>
+            <label for="add-node-name">Name</label>
+            <input type="text" id="add-node-name" required placeholder="New resource name">
+            <div class="add-node-actions">
+                <button type="button" id="add-node-cancel">Cancel</button>
+                <button type="submit" id="add-node-submit">Add</button>
+            </div>
+        </form>
+    </dialog>
+
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
     <script>
         // SHOW LOADING ////////////////////////////////////////////
@@ -84,6 +102,7 @@
             }
 
             const deleteButton = document.getElementById("delete-node");
+            const addButton = document.getElementById("add-node");
             const restoreButton = document.getElementById("restore-chart");
             const saveButton = document.getElementById("save-chart");
             const searchInput = document.getElementById("search-input");
@@ -91,6 +110,11 @@
             const toggleButton = document.getElementById("toggle-visibility");
             const undoButton = document.getElementById("undo-action");
             const redoButton = document.getElementById("redo-action");
+            const addDialog = document.getElementById("add-node-dialog");
+            const addForm = document.getElementById("add-node-form");
+            const addType = document.getElementById("add-node-type");
+            const addName = document.getElementById("add-node-name");
+            const addCancel = document.getElementById("add-node-cancel");
             const resourceIdValue = "{{ resource_id }}";
 
             const chartDataRaw = {{ resource_hierarchy_chart_data|tojson|safe }};
@@ -104,6 +128,7 @@
             }
 
             let currentRows = originalRows.slice();
+                const initialRowsSnapshot = JSON.parse(JSON.stringify(originalRows));
             let selectedNodeId = "";
             const deletedNodeIds = new Set();
             const collapsedNodeIds = new Set();
@@ -111,6 +136,8 @@
             const hiddenNodeSnapshots = new Map();
             const undoStack = [];
             const redoStack = [];
+            let tempNodeCounter = 0;
+                let hasAddedNodes = false;
 
             let chart = null;
 
@@ -150,6 +177,7 @@
                     focusNodeId,
                     hiddenNodeSnapshots: hiddenEntries,
                     originalRows: JSON.parse(JSON.stringify(originalRows)),
+                    hasAddedNodes,
                 };
             };
 
@@ -162,6 +190,7 @@
                 hiddenNodeSnapshots.clear();
                 state.hiddenNodeSnapshots.forEach(([id, html]) => hiddenNodeSnapshots.set(id, html));
                 originalRows = JSON.parse(JSON.stringify(state.originalRows));
+                hasAddedNodes = Boolean(state.hasAddedNodes);
                 selectedNodeId = "";
             };
 
@@ -264,6 +293,31 @@
                 }
                 const match = value.f.match(/data-node-type=\"([^\"]+)\"/);
                 return match ? match[1] : "";
+            };
+
+            const getSelectedNodeType = () => {
+                if (!selectedNodeId) {
+                    return "";
+                }
+                const row = originalRows.find((candidate) => getNodeId(candidate) === selectedNodeId)
+                    || currentRows.find((candidate) => getNodeId(candidate) === selectedNodeId);
+                return row ? getNodeTypeFromRow(row) : "";
+            };
+
+            const canAddChild = () => {
+                const type = getSelectedNodeType();
+                return type === "folder" || type === "organization" || type === "project";
+            };
+
+            const getAllowedAddTypes = () => {
+                const type = getSelectedNodeType();
+                if (type === "project") {
+                    return ["project"];
+                }
+                if (type === "folder" || type === "organization") {
+                    return ["folder", "project"];
+                }
+                return [];
             };
 
             const getIconHtmlFromRow = (row) => {
@@ -391,7 +445,10 @@
                 if (data.getNumberOfRows() === 0) {
                     container.innerHTML = "";
                     deleteButton.disabled = true;
-                    restoreButton.disabled = currentRows.length === originalRows.length;
+                    if (addButton) {
+                        addButton.disabled = true;
+                    }
+                    restoreButton.disabled = currentRows.length === originalRows.length && !hasAddedNodes;
                     if (saveButton) {
                         saveButton.disabled = true;
                     }
@@ -412,6 +469,9 @@
                         selectedNodeId = "";
                         clearSelectionHighlight();
                         deleteButton.disabled = true;
+                        if (addButton) {
+                            addButton.disabled = true;
+                        }
                         if (focusButton) {
                             focusButton.disabled = true;
                         }
@@ -426,6 +486,9 @@
                         selectedNodeId = "";
                         clearSelectionHighlight();
                         deleteButton.disabled = true;
+                        if (addButton) {
+                            addButton.disabled = true;
+                        }
                         if (focusButton) {
                             focusButton.disabled = true;
                         }
@@ -438,6 +501,9 @@
                     selectedNodeId = getNodeId(currentRows[rowIndex]);
                     applySelectionHighlight();
                     deleteButton.disabled = !selectedNodeId;
+                    if (addButton) {
+                        addButton.disabled = !canAddChild();
+                    }
                     if (focusButton) {
                         focusButton.disabled = !selectedNodeId;
                     }
@@ -460,10 +526,13 @@
                 });
 
                 deleteButton.disabled = !selectedNodeId;
+                if (addButton) {
+                    addButton.disabled = !canAddChild();
+                }
                 if (focusButton) {
                     focusButton.disabled = !selectedNodeId;
                 }
-                restoreButton.disabled = currentRows.length === originalRows.length;
+                restoreButton.disabled = currentRows.length === originalRows.length && !hasAddedNodes;
                 if (saveButton) {
                     saveButton.disabled = currentRows.length === 0;
                 }
@@ -501,6 +570,109 @@
                 selectedNodeId = "";
                 renderChart();
             });
+
+            const closeAddDialog = () => {
+                if (!addDialog) {
+                    return;
+                }
+                if (typeof addDialog.close === "function") {
+                    addDialog.close();
+                } else {
+                    addDialog.removeAttribute("open");
+                }
+            };
+
+            const openAddDialog = () => {
+                if (!addDialog) {
+                    return;
+                }
+                if (addName) {
+                    addName.value = "";
+                }
+                if (addType) {
+                    const allowedTypes = getAllowedAddTypes();
+                    const folderOption = addType.querySelector('option[value="folder"]');
+                    const projectOption = addType.querySelector('option[value="project"]');
+                    if (folderOption) {
+                        folderOption.disabled = !allowedTypes.includes("folder");
+                    }
+                    if (projectOption) {
+                        projectOption.disabled = !allowedTypes.includes("project");
+                    }
+                    addType.value = allowedTypes.includes("folder") ? "folder" : "project";
+                }
+                if (typeof addDialog.showModal === "function") {
+                    addDialog.showModal();
+                } else {
+                    addDialog.setAttribute("open", "true");
+                }
+            };
+
+            const buildTempNodeHtml = (type, nodeId, name) => {
+                const icon = `<img src="/static/img/${type}_tmp.png" width="26" height="26" alt="${type}">`;
+                if (type === "project") {
+                    return (
+                        `<div class="org-chart-node org-chart-node-row" data-node-id="${nodeId}" data-node-type="${type}" data-tooltip="Temporary ${type}">` +
+                        `<div class="org-chart-icon">${icon}</div>` +
+                        `<div class="org-chart-text">${name}</div>` +
+                        "</div>"
+                    );
+                }
+                return (
+                    `<div class="org-chart-node" data-node-id="${nodeId}" data-node-type="${type}" data-tooltip="Temporary ${type}">` +
+                    `<div class="org-chart-icon">${icon}</div>` +
+                    `<div class="org-chart-text">${name}</div>` +
+                    "</div>"
+                );
+            };
+
+            if (addButton) {
+                addButton.addEventListener("click", () => {
+                    if (!selectedNodeId || !canAddChild()) {
+                        return;
+                    }
+                    openAddDialog();
+                });
+            }
+
+            if (addCancel) {
+                addCancel.addEventListener("click", () => {
+                    closeAddDialog();
+                });
+            }
+
+            if (addForm) {
+                addForm.addEventListener("submit", (event) => {
+                    event.preventDefault();
+                    if (!selectedNodeId || !addType || !addName || !canAddChild()) {
+                        return;
+                    }
+                    const name = addName.value.trim();
+                    if (!name) {
+                        return;
+                    }
+                    const type = addType.value;
+                    if (!getAllowedAddTypes().includes(type)) {
+                        return;
+                    }
+                    const nodeId = `tmp-${type}-${Date.now()}-${tempNodeCounter++}`;
+                    const nodeHtml = buildTempNodeHtml(type, nodeId, name);
+                    const tooltipText = `Name: ${name}\nID: ${nodeId}\nCreated: Temporary`;
+                    pushUndoState();
+                    originalRows.push([
+                        {
+                            v: nodeId,
+                            f: nodeHtml,
+                        },
+                        selectedNodeId,
+                        tooltipText,
+                    ]);
+                    hasAddedNodes = true;
+                    selectedNodeId = nodeId;
+                    closeAddDialog();
+                    renderChart();
+                });
+            }
 
             if (toggleButton) {
                 toggleButton.addEventListener("click", () => {
@@ -560,6 +732,8 @@
                 collapsedNodeIds.clear();
                 selectedNodeId = "";
                 focusNodeId = "";
+                hasAddedNodes = false;
+                originalRows = JSON.parse(JSON.stringify(initialRowsSnapshot));
                 if (hiddenNodeSnapshots.size > 0) {
                     originalRows = originalRows.map((row) => {
                         const nodeId = getNodeId(row);
@@ -669,6 +843,9 @@
                 }
                 selectedNodeId = nodeId;
                 deleteButton.disabled = !selectedNodeId;
+                if (addButton) {
+                    addButton.disabled = !canAddChild();
+                }
                 if (focusButton) {
                     focusButton.disabled = !selectedNodeId;
                 }
