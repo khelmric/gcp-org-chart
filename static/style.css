@@ -437,14 +437,13 @@ body[data-theme="dark"] .org-chart-node.node-selected {
 }
 
 .org-chart-highlight {
-	background-color: #64ed3a;
-	color: #000000;
+	background-color: #f1c2c2;
 }
 
-.org-chart-highlight .org-chart-text {
-	color: #000000;
-	-webkit-text-fill-color: #000000;
-}
+/* .org-chart-highlight .org-chart-text {
+	color: #ffffff;
+	-webkit-text-fill-color: #ffffff;
+} */
 
 #saveBtn {
 	margin-top: 4px;

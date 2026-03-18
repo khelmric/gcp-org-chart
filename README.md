@@ -6,7 +6,7 @@ Web app that visualizes Google Cloud resource hierarchy (organization → folder
 - Zoom in/out with the mouse wheel.
 - Pan the chart with drag-and-drop (left click + hold).
 - Collapse/expand nodes with double click.
-- Search for any content using the Search field. The search function works in tooltips too where the resource create_date is placed (e.g. search for resources created on the 2025-12-12).
+- Search for resources with one or more terms using the Search field (comma-separated terms are supported). Search matching ignores whitespace and also works in tooltips where the resource create_date is placed (e.g. `folder a,2025-12-12`). Matching nodes are highlighted in red.
 - Focus on a child resource with the **Focus** button.
 - Hide resources with the **Hide** button.
 - Add temporary folders or projects under a selected organization/folder, or add projects under a selected project with the **Add** button.
@@ -38,6 +38,8 @@ Open http://localhost:8080
 
 ## Usage
 Enter a resource ID (organization ID, folder ID, or project ID) and press Enter. The hierarchy is loaded and rendered in the chart.
+
+Use the Search field to filter visually by one or more terms separated by commas. Whitespace is ignored in matching.
 
 To add a temporary node, select an organization or folder, click **Add**, choose **Folder** or **Project**, and provide a name. If you select a project, only **Project** can be added. Temporary nodes are marked with the *_tmp.png icons and are removed when you click **Reset all**.
 

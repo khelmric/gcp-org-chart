@@ -544,16 +544,22 @@
             };
 
             const highlightSearchMatches = (query) => {
-                const term = (query || "").trim().toLowerCase();
+                const normalizedTerms = (query || "")
+                    .split(",")
+                    .map((term) => term.replace(/\s+/g, "").toLowerCase())
+                    .filter((term) => term.length > 0);
                 const nodes = container.querySelectorAll(".org-chart-node");
                 nodes.forEach((node) => {
                     node.classList.remove("org-chart-highlight");
-                    if (!term) {
+                    if (normalizedTerms.length === 0) {
                         return;
                     }
-                    const text = node.textContent ? node.textContent.toLowerCase() : "";
-                    const tooltip = node.dataset && node.dataset.tooltip ? node.dataset.tooltip.toLowerCase() : "";
-                    if (text.includes(term) || tooltip.includes(term)) {
+                    const text = node.textContent ? node.textContent.replace(/\s+/g, "").toLowerCase() : "";
+                    const tooltip = node.dataset && node.dataset.tooltip
+                        ? node.dataset.tooltip.replace(/\s+/g, "").toLowerCase()
+                        : "";
+                    const isMatch = normalizedTerms.some((term) => text.includes(term) || tooltip.includes(term));
+                    if (isMatch) {
                         node.classList.add("org-chart-highlight");
                     }
                 });
