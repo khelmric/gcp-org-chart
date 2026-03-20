@@ -403,7 +403,7 @@ body[data-theme="dark"] .google-visualization-orgchart-node {
 body[data-theme="dark"] .google-visualization-orgchart-lineleft,
 body[data-theme="dark"] .google-visualization-orgchart-lineright,
 body[data-theme="dark"] .google-visualization-orgchart-linebottom {
-	border-color: #475569 !important;
+	border-color: #94a3b8 !important;
 }
 
 body[data-theme="dark"] .google-visualization-orgchart-node-selected {
