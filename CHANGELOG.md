@@ -2,7 +2,7 @@
 
 ## 2026-04-27
 - Removed all whitespace characters from the Resource ID input automatically before processing.
-- Updated chart image export to remove `.org-chart-highlight` classes so search highlighting is not included in saved PNGs.
+- Updated chart image export to keep search highlighting in saved PNGs.
 
 ## 2026-03-17
 - Updated search to support multiple terms separated by commas (OR matching).
