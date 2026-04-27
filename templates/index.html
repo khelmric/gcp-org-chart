@@ -786,9 +786,6 @@
                                     clonedDoc.body.setAttribute("data-theme", "dark");
                                 }
                                 clonedDoc
-                                    .querySelectorAll(".org-chart-highlight")
-                                    .forEach((node) => node.classList.remove("org-chart-highlight"));
-                                clonedDoc
                                     .querySelectorAll(".google-visualization-orgchart-node-selected")
                                     .forEach((node) => node.classList.remove("google-visualization-orgchart-node-selected"));
                                 clonedDoc
@@ -959,6 +956,13 @@
         const resourceInput = document.getElementById("resourceId");
         const configForm = document.getElementById("config_form");
         if (resourceInput && configForm) {
+            resourceInput.addEventListener("input", () => {
+                const pos = resourceInput.selectionStart;
+                const before = resourceInput.value.length;
+                resourceInput.value = resourceInput.value.replace(/\s/g, "");
+                const removed = before - resourceInput.value.length;
+                resourceInput.setSelectionRange(pos - removed, pos - removed);
+            });
             resourceInput.addEventListener("keydown", (event) => {
                 if (event.key === "Enter") {
                     event.preventDefault();

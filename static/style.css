@@ -440,10 +440,26 @@ body[data-theme="dark"] .org-chart-node.node-selected {
 	background-color: #f1c2c2;
 }
 
-/* .org-chart-highlight .org-chart-text {
-	color: #ffffff;
-	-webkit-text-fill-color: #ffffff;
-} */
+body[data-theme="dark"] .org-chart-highlight {
+	background-color: #7f1d1d;
+}
+
+.org-chart-highlight .org-chart-text,
+.org-chart-highlight .org-chart-count,
+.org-chart-highlight .org-chart-summary,
+.org-chart-highlight .org-chart-mult {
+	position: relative;
+	z-index: 1;
+	color: var(--text) !important;
+	-webkit-text-fill-color: currentColor;
+}
+
+body[data-theme="dark"] .org-chart-highlight .org-chart-text,
+body[data-theme="dark"] .org-chart-highlight .org-chart-count,
+body[data-theme="dark"] .org-chart-highlight .org-chart-summary,
+body[data-theme="dark"] .org-chart-highlight .org-chart-mult {
+	color: #fee2e2 !important;
+}
 
 #saveBtn {
 	margin-top: 4px;
