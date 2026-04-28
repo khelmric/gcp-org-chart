@@ -16,6 +16,7 @@
         </div>
 
         <div id="controls">
+            <button id="details-toggle" type="button" style="margin-right: 8px;" aria-label="Hide details panel" title="Hide details panel">🧾</button>
             <button id="theme-toggle" type="button" style="margin-right: 12px;" aria-label="Toggle dark mode" title="Toggle dark mode">🌙</button>
             <span style="padding-right: 20px">
                 {% if current_account == "unauthenticated user" %}
@@ -52,6 +53,7 @@
         </div>
     </config>
     <main>
+        <pre id="selected-node-tooltip" aria-live="polite"></pre>
         <div id="loading">
             <p>Loading, please wait...</p>
             <img src="{{ url_for('static', filename='loading.gif') }}" alt="Loading...">
@@ -93,6 +95,8 @@
             return true;
         }
 
+        let detailsPanelEnabled = true;
+
         // ORG CHART //////////////////////////////////////////////
 
         function drawOrgChart() {
@@ -115,6 +119,7 @@
             const addType = document.getElementById("add-node-type");
             const addName = document.getElementById("add-node-name");
             const addCancel = document.getElementById("add-node-cancel");
+            const selectedNodeTooltip = document.getElementById("selected-node-tooltip");
             const resourceIdValue = "{{ resource_id }}";
 
             const chartDataRaw = {{ resource_hierarchy_chart_data|tojson|safe }};
@@ -256,6 +261,27 @@
                     return value;
                 }
                 return value && value.v ? value.v : "";
+            };
+
+            const getTooltipForNodeId = (nodeId) => {
+                if (!nodeId) {
+                    return "";
+                }
+                const row = currentRows.find((candidate) => getNodeId(candidate) === nodeId)
+                    || originalRows.find((candidate) => getNodeId(candidate) === nodeId);
+                if (!row || row.length < 3) {
+                    return "";
+                }
+                return typeof row[2] === "string" ? row[2] : "";
+            };
+
+            const renderSelectedTooltip = () => {
+                if (!selectedNodeTooltip) {
+                    return;
+                }
+                const tooltipText = getTooltipForNodeId(selectedNodeId);
+                selectedNodeTooltip.textContent = tooltipText;
+                selectedNodeTooltip.style.display = detailsPanelEnabled && tooltipText ? "block" : "none";
             };
 
             const buildChildrenMap = (rows) => {
@@ -444,6 +470,8 @@
                 const data = buildDataTable(rowsWithCounts);
                 if (data.getNumberOfRows() === 0) {
                     container.innerHTML = "";
+                    selectedNodeId = "";
+                    renderSelectedTooltip();
                     deleteButton.disabled = true;
                     if (addButton) {
                         addButton.disabled = true;
@@ -468,6 +496,7 @@
                     if (!selection.length) {
                         selectedNodeId = "";
                         clearSelectionHighlight();
+                        renderSelectedTooltip();
                         deleteButton.disabled = true;
                         if (addButton) {
                             addButton.disabled = true;
@@ -485,6 +514,7 @@
                     if (rowIndex === null || rowIndex === undefined) {
                         selectedNodeId = "";
                         clearSelectionHighlight();
+                        renderSelectedTooltip();
                         deleteButton.disabled = true;
                         if (addButton) {
                             addButton.disabled = true;
@@ -500,6 +530,7 @@
                     }
                     selectedNodeId = getNodeId(currentRows[rowIndex]);
                     applySelectionHighlight();
+                    renderSelectedTooltip();
                     deleteButton.disabled = !selectedNodeId;
                     if (addButton) {
                         addButton.disabled = !canAddChild();
@@ -515,6 +546,7 @@
                 chart.draw(data, { allowHtml: true });
 
                 applySelectionHighlight();
+                renderSelectedTooltip();
 
                 if (searchInput) {
                     searchInput.disabled = false;
@@ -955,6 +987,32 @@
 
         const resourceInput = document.getElementById("resourceId");
         const configForm = document.getElementById("config_form");
+        const detailsToggle = document.getElementById("details-toggle");
+        const selectedNodeTooltip = document.getElementById("selected-node-tooltip");
+        detailsPanelEnabled = localStorage.getItem("detailsPanelEnabled") !== "false";
+
+        const applyDetailsPanelPreference = () => {
+            if (detailsToggle) {
+                detailsToggle.textContent = detailsPanelEnabled ? "🗒️" : "🗒️";
+                detailsToggle.setAttribute("aria-label", detailsPanelEnabled ? "Hide details panel" : "Show details panel");
+                detailsToggle.setAttribute("title", detailsPanelEnabled ? "Hide details panel" : "Show details panel");
+                detailsToggle.classList.toggle("details-on", detailsPanelEnabled);
+                detailsToggle.classList.toggle("details-off", !detailsPanelEnabled);
+            }
+            if (selectedNodeTooltip) {
+                selectedNodeTooltip.style.display = detailsPanelEnabled && selectedNodeTooltip.textContent ? "block" : "none";
+            }
+        };
+
+        applyDetailsPanelPreference();
+        if (detailsToggle) {
+            detailsToggle.addEventListener("click", () => {
+                detailsPanelEnabled = !detailsPanelEnabled;
+                localStorage.setItem("detailsPanelEnabled", detailsPanelEnabled ? "true" : "false");
+                applyDetailsPanelPreference();
+            });
+        }
+
         if (resourceInput && configForm) {
             resourceInput.addEventListener("input", () => {
                 const pos = resourceInput.selectionStart;

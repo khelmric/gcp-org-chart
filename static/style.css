@@ -93,6 +93,14 @@ header button:hover {
 	background-color: rgba(255, 255, 255, 0.28);
 }
 
+#details-toggle.details-on {
+	border: 1px solid #86efac;
+}
+
+#details-toggle.details-off {
+	border: 1px solid #fca5a5;
+}
+
 main {
 	position: relative;
 	display: block;
@@ -102,6 +110,35 @@ main {
 	overflow-x: hidden;
 	transition: all 0.4s ease;
 	padding: 0 28px 40px;
+}
+
+#selected-node-tooltip {
+	display: none;
+	position: absolute;
+	top: 8px;
+	left: 28px;
+	margin: 0;
+	padding: 6px;
+	max-width: min(55ch, calc(100% - 56px));
+	white-space: pre-wrap;
+	word-break: break-word;
+	background-color: rgba(245, 247, 251, 0.8);
+	border: 0;
+	color: var(--text);
+	font-family: "JetBrains Mono", "Fira Code", "Cascadia Code", "SFMono-Regular", Menlo, Monaco, Consolas, "Liberation Mono", monospace;
+	font-size: 11px;
+	line-height: 1.45;
+	letter-spacing: 0.2px;
+	pointer-events: auto;
+	user-select: text;
+	cursor: text;
+	z-index: 5;
+	text-shadow: 0 0 0.35px currentColor;
+}
+
+body[data-theme="dark"] #selected-node-tooltip {
+	background-color: rgba(11, 17, 32, 0.8);
+	color: var(--text);
 }
 
 .configDiv {
@@ -484,6 +521,10 @@ body[data-theme="dark"] .org-chart-highlight .org-chart-mult {
 }
 
 @media print {
+	#selected-node-tooltip {
+		display: none !important;
+	}
+
 	config {
 		display: none;
 	}

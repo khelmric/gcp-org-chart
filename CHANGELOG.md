@@ -1,5 +1,9 @@
 # Changelog
 
+## 2026-04-28
+- Added a selected-node details panel below the configuration area that shows node tooltip content on selection and clears on deselection.
+- Added a details panel toggle button.
+
 ## 2026-04-27
 - Removed all whitespace characters from the Resource ID input automatically before processing.
 - Updated chart image export to keep search highlighting in saved PNGs.
