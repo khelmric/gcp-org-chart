@@ -1,10 +1,9 @@
 # Changelog
 
 ## 2026-04-30
-- Replaced the **Save PNG** button with a 💾 icon button in the header that opens a "Save As" popup dialog.
+- Replaced the **Save** button with a 💾 icon button in the header that opens a "Save As" popup dialog.
 - Added **Save YAML** option to the save dialog to export all resource data as a YAML file.
 - Added a **Reload page** button (the header logo image) that reloads the current page including query parameters.
-- Loading spinner is now shown immediately on first page load when a `resourceId` parameter is present.
 
 ## 2026-04-28
 - Added a selected-node details panel below the configuration area that shows node tooltip content on selection and clears on deselection.
