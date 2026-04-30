@@ -93,6 +93,72 @@ header button:hover {
 	background-color: rgba(255, 255, 255, 0.28);
 }
 
+#controls {
+	display: flex;
+	align-items: center;
+	gap: 8px;
+	flex-wrap: wrap;
+}
+
+.save-menu {
+	position: relative;
+	display: inline-flex;
+	align-items: center;
+	margin-right: 12px;
+}
+
+.save-menu-toggle {
+	min-width: 46px;
+	padding: 6px 12px;
+}
+
+
+#save-dialog {
+	border: 1px solid var(--border);
+	border-radius: 12px;
+	padding: 0;
+	background: var(--surface);
+	color: var(--text);
+	box-shadow: var(--shadow);
+}
+
+#save-dialog::backdrop {
+	background: rgba(15, 23, 42, 0.35);
+}
+
+.save-dialog-form {
+	display: flex;
+	flex-direction: column;
+	gap: 12px;
+	padding: 16px;
+	min-width: 220px;
+}
+
+.save-dialog-form h3 {
+	margin: 0;
+	font-size: 16px;
+}
+
+.save-dialog-actions {
+	display: grid;
+	grid-template-columns: 1fr 1fr;
+	gap: 8px;
+}
+
+.save-dialog-actions button {
+	background: #22c55e;
+}
+
+.save-dialog-actions button:hover:not(.menu-item-disabled) {
+	background: #16a34a;
+}
+
+.save-dialog-actions button.menu-item-disabled {
+	background: #86efac;
+	opacity: 0.55;
+	cursor: not-allowed;
+}
+
 #details-toggle.details-on {
 	border: 1px solid #86efac;
 }
@@ -253,18 +319,6 @@ button:disabled {
 
 #delete-node:disabled {
 	background: #f5d5cb;
-}
-
-#save-chart {
-	background: #22c55e;
-}
-
-#save-chart:hover:not(:disabled) {
-	background: #16a34a;
-}
-
-#save-chart:disabled {
-	background: #86efac;
 }
 
 #add-node {

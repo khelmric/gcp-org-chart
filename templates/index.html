@@ -11,13 +11,16 @@
 <body>
     <header>
         <div class="left">
-            <img src="/static/favicon.png" width="40" height="40">
+            <img id="home-logo" src="/static/favicon.png" width="40" height="40" style="cursor: pointer;" title="Reload page" aria-label="Reload page">
             <h2>GCP Org Chart Viewer</h2>
         </div>
 
         <div id="controls">
             <button id="details-toggle" type="button" style="margin-right: 8px;" aria-label="Hide details panel" title="Hide details panel">🧾</button>
             <button id="theme-toggle" type="button" style="margin-right: 12px;" aria-label="Toggle dark mode" title="Toggle dark mode">🌙</button>
+            <div id="save-menu" class="save-menu">
+                <button id="save-menu-toggle" type="button" class="save-menu-toggle" aria-label="Save options" title="Save options" aria-haspopup="dialog">💾</button>
+            </div>
             <span style="padding-right: 20px">
                 {% if current_account == "unauthenticated user" %}
                     🔴 {{ current_account }}
@@ -44,7 +47,6 @@
                     <button id="undo-action" type="button" style="margin-left: 6px;" disabled aria-label="Undo" title="Undo">↺</button>
                     <button id="redo-action" type="button" style="margin-left: 6px;" disabled aria-label="Redo" title="Redo">↻</button>
                     <button id="restore-chart" type="button" style="margin-left: 6px;" disabled>Reset all</button>
-                    <button id="save-chart" type="button" style="margin-left: 6px;" disabled>Save</button>
                 </section>
                 <section>
                     <span id="error_msg" style="color: red;vertical-align: top;visibility: {{ 'visible' if error_msg else 'hidden' }};">{{error_msg|safe}}</span>
@@ -54,7 +56,7 @@
     </config>
     <main>
         <pre id="selected-node-tooltip" aria-live="polite"></pre>
-        <div id="loading">
+        <div id="loading" style="display: {{ 'block' if resource_id else 'none' }};">
             <p>Loading, please wait...</p>
             <img src="{{ url_for('static', filename='loading.gif') }}" alt="Loading...">
         </div>
@@ -83,6 +85,17 @@
         </form>
     </dialog>
 
+    <dialog id="save-dialog" class="save-dialog">
+        <form class="save-dialog-form" method="dialog">
+            <h3>Save As</h3>
+            <div class="save-dialog-actions">
+                <button id="save-chart" type="button">PNG</button>
+                <button id="save-yaml" type="button">YAML</button>
+            </div>
+            <button id="save-dialog-close" type="button">Close</button>
+        </form>
+    </dialog>
+
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
     <script>
         // SHOW LOADING ////////////////////////////////////////////
@@ -96,6 +109,46 @@
         }
 
         let detailsPanelEnabled = true;
+        const saveMenuToggle = document.getElementById("save-menu-toggle");
+        const saveDialog = document.getElementById("save-dialog");
+        const saveDialogClose = document.getElementById("save-dialog-close");
+
+        const closeSaveDialog = () => {
+            if (!saveDialog) {
+                return;
+            }
+            if (typeof saveDialog.close === "function") {
+                saveDialog.close();
+            } else {
+                saveDialog.removeAttribute("open");
+            }
+        };
+
+        if (saveMenuToggle && saveDialog) {
+            saveMenuToggle.addEventListener("click", () => {
+                if (saveDialog.open) {
+                    closeSaveDialog();
+                    return;
+                }
+                if (typeof saveDialog.showModal === "function") {
+                    saveDialog.showModal();
+                } else {
+                    saveDialog.setAttribute("open", "true");
+                }
+            });
+
+            saveDialog.addEventListener("click", (event) => {
+                if (event.target === saveDialog) {
+                    closeSaveDialog();
+                }
+            });
+        }
+
+        if (saveDialogClose) {
+            saveDialogClose.addEventListener("click", () => {
+                closeSaveDialog();
+            });
+        }
 
         // ORG CHART //////////////////////////////////////////////
 
@@ -109,6 +162,7 @@
             const addButton = document.getElementById("add-node");
             const restoreButton = document.getElementById("restore-chart");
             const saveButton = document.getElementById("save-chart");
+            const saveYamlButton = document.getElementById("save-yaml");
             const searchInput = document.getElementById("search-input");
             const focusButton = document.getElementById("focus-node");
             const toggleButton = document.getElementById("toggle-visibility");
@@ -145,6 +199,19 @@
                 let hasAddedNodes = false;
 
             let chart = null;
+
+            const setSaveControlsDisabled = (isDisabled) => {
+                if (saveButton) {
+                    saveButton.disabled = false;
+                    saveButton.setAttribute("aria-disabled", isDisabled ? "true" : "false");
+                    saveButton.classList.toggle("menu-item-disabled", isDisabled);
+                }
+                if (saveYamlButton) {
+                    saveYamlButton.disabled = false;
+                    saveYamlButton.setAttribute("aria-disabled", isDisabled ? "true" : "false");
+                    saveYamlButton.classList.toggle("menu-item-disabled", isDisabled);
+                }
+            };
 
             const buildDataTable = (rows) => {
                 var data = new google.visualization.DataTable();
@@ -477,9 +544,7 @@
                         addButton.disabled = true;
                     }
                     restoreButton.disabled = currentRows.length === originalRows.length && !hasAddedNodes;
-                    if (saveButton) {
-                        saveButton.disabled = true;
-                    }
+                    setSaveControlsDisabled(true);
                     if (focusButton) {
                         focusButton.disabled = true;
                     }
@@ -565,9 +630,7 @@
                     focusButton.disabled = !selectedNodeId;
                 }
                 restoreButton.disabled = currentRows.length === originalRows.length && !hasAddedNodes;
-                if (saveButton) {
-                    saveButton.disabled = currentRows.length === 0;
-                }
+                setSaveControlsDisabled(currentRows.length === 0);
                 if (toggleButton) {
                     toggleButton.disabled = !selectedNodeId;
                     toggleButton.textContent = hiddenNodeSnapshots.has(selectedNodeId) ? "Show" : "Hide";
@@ -787,12 +850,17 @@
 
             if (saveButton) {
                 saveButton.addEventListener("click", async () => {
+                    closeSaveDialog();
+                    if (saveButton.getAttribute("aria-disabled") === "true") {
+                        alert("No chart data to export yet. Load a resource first.");
+                        return;
+                    }
                     const chartRoot = document.getElementById("resource-hierarchy-chart-scale");
                     const chartElement = document.getElementById("resource-hierarchy-chart");
                     if (!chartRoot || !chartElement) {
                         return;
                     }
-                    saveButton.disabled = true;
+                    setSaveControlsDisabled(true);
                     const previousTransform = chartRoot.style.transform;
                     const previousWidth = chartElement.style.width;
                     const previousHeight = chartElement.style.height;
@@ -842,8 +910,90 @@
                         chartRoot.style.transform = previousTransform;
                         chartElement.style.width = previousWidth;
                         chartElement.style.height = previousHeight;
-                        saveButton.disabled = currentRows.length === 0;
+                        setSaveControlsDisabled(currentRows.length === 0);
                     }
+                });
+            }
+
+            if (saveYamlButton) {
+                saveYamlButton.addEventListener("click", () => {
+                    closeSaveDialog();
+                    if (saveYamlButton.getAttribute("aria-disabled") === "true") {
+                        alert("No chart data to export yet. Load a resource first.");
+                        return;
+                    }
+                    const safeId = (resourceIdValue || "chart").replace(/[^a-zA-Z0-9_-]+/g, "_");
+
+                    const parseTooltip = (tooltip) => {
+                        const result = {};
+                        if (!tooltip) return result;
+                        const lines = tooltip.split("\n");
+                        let inLabels = false;
+                        const labelsList = [];
+                        for (const line of lines) {
+                            if (line === "Labels:") {
+                                inLabels = true;
+                                continue;
+                            }
+                            if (inLabels && line.startsWith("  - ")) {
+                                labelsList.push(line.slice(4));
+                                continue;
+                            }
+                            inLabels = false;
+                            const colonIdx = line.indexOf(": ");
+                            if (colonIdx > 0) {
+                                const key = line.slice(0, colonIdx).toLowerCase().replace(/ /g, "_");
+                                result[key] = line.slice(colonIdx + 2);
+                            }
+                        }
+                        if (labelsList.length > 0) {
+                            result["labels"] = labelsList;
+                        }
+                        return result;
+                    };
+
+                    const yamlEscape = (str) => {
+                        if (str === null || str === undefined || str === "") return "''";
+                        const s = String(str);
+                        if (/[:\[\]{}#|>&*!,?@`"']/.test(s) || s.includes("\n") || s.startsWith(" ") || s.endsWith(" ")) {
+                            return `"${s.replace(/\\/g, "\\\\").replace(/"/g, '\\"')}"`;
+                        }
+                        return s;
+                    };
+
+                    let yaml = "resources:\n";
+                    for (const row of currentRows) {
+                        const nodeId = getNodeId(row);
+                        const parentId = row[1] || "";
+                        const nodeType = getNodeTypeFromRow(row);
+                        const tooltip = typeof row[2] === "string" ? row[2] : "";
+                        const props = parseTooltip(tooltip);
+
+                        yaml += `  - id: ${yamlEscape(nodeId)}\n`;
+                        yaml += `    type: ${yamlEscape(nodeType || "unknown")}\n`;
+                        if (parentId) {
+                            yaml += `    parent: ${yamlEscape(parentId)}\n`;
+                        }
+                        if (props.name) yaml += `    name: ${yamlEscape(props.name)}\n`;
+                        if (props.created) yaml += `    created: ${yamlEscape(props.created)}\n`;
+                        if (props.state) yaml += `    state: ${yamlEscape(props.state)}\n`;
+                        if (props.updated) yaml += `    updated: ${yamlEscape(props.updated)}\n`;
+                        if (props.location) yaml += `    location: ${yamlEscape(props.location)}\n`;
+                        if (props.asset_type) yaml += `    asset_type: ${yamlEscape(props.asset_type)}\n`;
+                        if (props.labels && props.labels.length > 0) {
+                            yaml += "    labels:\n";
+                            for (const label of props.labels) {
+                                yaml += `      - ${yamlEscape(label)}\n`;
+                            }
+                        }
+                    }
+
+                    const blob = new Blob([yaml], { type: "text/yaml" });
+                    const link = document.createElement("a");
+                    link.download = `resources_${safeId}.yaml`;
+                    link.href = URL.createObjectURL(blob);
+                    link.click();
+                    URL.revokeObjectURL(link.href);
                 });
             }
 
@@ -987,9 +1137,16 @@
 
         const resourceInput = document.getElementById("resourceId");
         const configForm = document.getElementById("config_form");
+        const homeLogo = document.getElementById("home-logo");
         const detailsToggle = document.getElementById("details-toggle");
         const selectedNodeTooltip = document.getElementById("selected-node-tooltip");
         detailsPanelEnabled = localStorage.getItem("detailsPanelEnabled") !== "false";
+
+        if (homeLogo) {
+            homeLogo.addEventListener("click", () => {
+                window.location.reload();
+            });
+        }
 
         const applyDetailsPanelPreference = () => {
             if (detailsToggle) {
